@@ -6,125 +6,167 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../model/product_model.dart';
 import '../../viewmodel/products_controller.dart';
 
-class AddProductPage extends StatefulWidget {
-  const AddProductPage({super.key});
-
-  @override
-  State<AddProductPage> createState() => _AddProductPageState();
-}
-
-class _AddProductPageState extends State<AddProductPage> {
-  final _controller = Get.find<ProductController>(); // 🔹 نربط الكنترولر
-  final _formKey = GlobalKey<FormState>();
-
-  // 📝 حقول الإدخال
-  final nameCtrl = TextEditingController();
-  final priceCtrl = TextEditingController();
-  final descCtrl = TextEditingController();
-
-  File? _selectedImage; // لحفظ الصورة المختارة
-
-  // 🔹 اختيار صورة من المعرض
-  Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
-    }
-  }
-
-  // 🔹 إضافة المنتج (رفع الصورة + إدخال البيانات)
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    // 🔸 حالة تحميل بسيطة
-    Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
-
-    String? imageUrl;
-    if (_selectedImage != null) {
-      imageUrl = await _controller.pickAndUploadImage(_selectedImage!);
-    }
-
-    // 🔸 إنشاء المنتج
-    final product = ProductModel(
-      id: '', // Firebase يولّد تلقائي
-      name: nameCtrl.text.trim(),
-      price: double.tryParse(priceCtrl.text.trim()) ?? 0,
-      description: descCtrl.text.trim(),
-      imageUrl: imageUrl ?? '',
-    );
-
-    // 🔸 إضافة المنتج
-    await _controller.addProduct(product);
-
-    // 🔸 إغلاق التحميل والرجوع
-    Get.back(); // يغلق الديالوج
-    Get.back(); // يرجع للصفحة الرئيسية
-  }
+class AddProductPage extends StatelessWidget {
+  final ProductModel? existingProduct;
+  const AddProductPage({super.key, this.existingProduct});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<ProductController>();
+
+    final nameCtrl = TextEditingController(text: existingProduct?.name ?? '');
+    final priceCtrl =
+    TextEditingController(text: existingProduct?.price.toString() ?? '');
+    final descCtrl =
+    TextEditingController(text: existingProduct?.description ?? '');
+
+    final formKey = GlobalKey<FormState>();
+    final Rx<File?> selectedImage = Rx<File?>(null);
+
+    Future<void> pickImage() async {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        selectedImage.value = File(picked.path);
+      }
+    }
+
+    final bool isEdit = existingProduct != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('إضافة منتج جديد')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              // 🔹 صورة المنتج
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  height: 180,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: _selectedImage == null
-                      ? const Center(child: Text('اضغط لاختيار صورة 📸'))
-                      : ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 🔹 حقل الاسم
-              TextFormField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'اسم المنتج'),
-                validator: (v) => v!.isEmpty ? 'أدخل اسم المنتج' : null,
-              ),
-              const SizedBox(height: 10),
-
-              // 🔹 حقل السعر
-              TextFormField(
-                controller: priceCtrl,
-                decoration: const InputDecoration(labelText: 'السعر'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v!.isEmpty ? 'أدخل السعر' : null,
-              ),
-              const SizedBox(height: 10),
-
-              // 🔹 حقل الوصف
-              TextFormField(
-                controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'الوصف'),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 20),
-
-              // 🔹 زر الإضافة
-              ElevatedButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.add),
-                label: const Text('إضافة المنتج'),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: Text(isEdit ? 'تعديل المنتج' : 'إضافة منتج جديد'),
+        centerTitle: true,
       ),
+      body: Obx(() {
+        // ✅ مؤشر التحميل من الكنترولر فقط
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: formKey,
+            child: ListView(
+              children: [
+                // 🔹 الصورة
+                GestureDetector(
+                  onTap: pickImage,
+                  child: Obx(() {
+                    final img = selectedImage.value;
+                    final url = existingProduct?.imageUrl ?? '';
+                    return Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: img != null
+                          ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.file(img, fit: BoxFit.cover),
+                      )
+                          : url.isNotEmpty
+                          ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Center(
+                              child:
+                              Icon(Icons.broken_image, size: 48)),
+                        ),
+                      )
+                          : const Center(
+                        child: Text('اضغط لاختيار صورة 📸',
+                            style: TextStyle(color: Colors.grey)),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 20),
+
+                // 🔹 الاسم
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'اسم المنتج',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'أدخل اسم المنتج' : null,
+                ),
+                const SizedBox(height: 12),
+
+                // 🔹 السعر
+                TextFormField(
+                  controller: priceCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'السعر',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (v) => v!.isEmpty ? 'أدخل السعر' : null,
+                ),
+                const SizedBox(height: 12),
+
+                // 🔹 الوصف
+                TextFormField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'الوصف',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
+
+                // 🔹 زر العملية
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+
+                    controller.isLoading.value = true;
+                    try {
+                      String imageUrl = existingProduct?.imageUrl ?? '';
+
+                      // 🖼️ رفع الصورة إن وُجدت
+                      if (selectedImage.value != null) {
+                        final uploaded = await controller
+                            .pickAndUploadImage(selectedImage.value!);
+                        if (uploaded != null) imageUrl = uploaded;
+                      }
+
+                      // 🧱 بناء المنتج
+                      final product = ProductModel(
+                        id: existingProduct?.id ?? '',
+                        name: nameCtrl.text.trim(),
+                        price: double.tryParse(priceCtrl.text.trim()) ?? 0,
+                        description: descCtrl.text.trim(),
+                        imageUrl: imageUrl,
+                      );
+
+                      // ⚙️ استدعاء دوال الكنترولر الجاهزة
+                      if (isEdit) {
+                        await controller.updateProduct(product);
+                      } else {
+                        await controller.addProduct(product);
+                      }
+
+                      Get.back(); // الرجوع بعد التنفيذ
+                    } catch (e) {
+                      Get.snackbar('خطأ', 'حدث خطأ أثناء العملية: $e');
+                    } finally {
+                      controller.isLoading.value = false;
+                    }
+                  },
+                  icon: Icon(isEdit ? Icons.save : Icons.add),
+                  label: Text(isEdit ? 'حفظ التعديلات' : 'إضافة المنتج'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }

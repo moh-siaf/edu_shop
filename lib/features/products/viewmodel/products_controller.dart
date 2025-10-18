@@ -48,6 +48,26 @@ class ProductController extends GetxController {
     final url = await _storageRepo.uploadProductImage(file);
     return url;
   }
+  Future<void> deleteProduct(String id) async {
+    try {
+      await _repo.deleteProduct(id);
+      products.removeWhere((p) => p.id == id);
+      Get.snackbar('تم الحذف', 'تم حذف المنتج بنجاح');
+    } catch (e) {
+      Get.snackbar('خطأ', 'تعذر حذف المنتج');
+    }}
+  Future<void> updateProduct(ProductModel product) async {
+    try {
+      await _repo.updateProduct(product);
+      // تحديث المنتج محليًا بدل ما نعيد جلب الكل
+      final index = products.indexWhere((p) => p.id == product.id);
+      if (index != -1) products[index] = product;
+      products.refresh();
+      Get.snackbar('تم التعديل', 'تم تحديث المنتج بنجاح');
+    } catch (e) {
+      Get.snackbar('خطأ', 'تعذر تعديل المنتج');
+    }
+  }
 
 
   /// 🔹 تحميل المنتجات عند بدء التشغيل

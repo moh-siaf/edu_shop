@@ -26,9 +26,17 @@ class StorageRepository implements BaseStorageRepository {
       final resBody = await response.stream.bytesToString();
       final data = json.decode(resBody);
 
+// 🔍 أضف هذا السطر الجديد
+      print('📸 ImgBB response: $data');
+
+      if (response.statusCode == 200) {
+        return data['data']['display_url'] ?? data['data']['image']['url'];
+      }
+
       // إذا نجح الرفع ✅
       if (response.statusCode == 200) {
-        return data['data']['url']; // نرجع رابط الصورة
+        return data['data']['display_url'] ?? data['data']['image']['url'];
+// نرجع رابط الصورة
       } else {
         print('❌ فشل رفع الصورة: ${data['error']['message']}');
         return null;

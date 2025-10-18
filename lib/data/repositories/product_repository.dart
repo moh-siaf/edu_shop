@@ -4,6 +4,8 @@ import '../../model/product_model.dart';
 import 'base_product_repository.dart';
 
 class ProductRepository implements BaseProductRepository {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final _productsRef = FirebaseFirestore.instance.collection('products');
 
   /// 🔹 تنفيذ جلب كل المنتجات من Firestore
@@ -33,4 +35,23 @@ class ProductRepository implements BaseProductRepository {
     });
     return docRef.id;
   }
+  // 🔹 دالة حذف منتج من Firestore
+
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    await _firestore.collection('products').doc(id).delete();
+  }
+  @override
+  Future<void> updateProduct(ProductModel product) async {
+    await _firestore.collection('products').doc(product.id).update({
+      'name': product.name,
+      'price': product.price,
+      'description': product.description,
+      'imageUrl': product.imageUrl,
+      'createdAt': product.createdAt,
+    });
+  }
+
+
 }
