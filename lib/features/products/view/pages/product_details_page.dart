@@ -3,22 +3,49 @@ import 'package:get/get.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../model/product_model.dart';
-
+import '../../../../routes/app_routes.dart';
+import '../../../cart/cart_controller/cart_controller.dart';
+import '../../viewmodel/products_controller.dart';
 
 class ProductDetailsPage extends StatelessWidget {
   const ProductDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final ProductModel product = Get.arguments;
-    final RxInt qty = 1.obs; // تفاعل بسيط للواجهة فقط
+    // 1. استقبال البيانات وتحديد السياق
+    final arguments = Get.arguments;
+    final ProductModel product;
+    bool isFromCart = false;
+    int initialQuantity = 1;
+
+
+
+    if (arguments is Map && arguments['source'] == 'cart') {
+      product = arguments['product'];
+      initialQuantity = arguments['quantity'];
+      isFromCart = true;
+    } else {
+      product = arguments;
+      isFromCart = false;
+    }
+
+    // 2. تهيئة الكنترولرات والكمية
+    final CartController cartController = Get.find<CartController>();
+    final ProductController productController = Get.find<ProductController>();
+    final RxInt qty = initialQuantity.obs;
 
     final hasDesc = !(product.description?.trim().isEmpty ?? true);
     final descText = hasDesc ? product.description!.trim() : 'لا يوجد وصف متاح لهذا المنتج.';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.name, style: AppTextStyles.subheading),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () => Get.toNamed(Routes.cart),
+          ),
+        ],
+        title: Text(isFromCart ? 'تعديل الكمية' : product.name, style: AppTextStyles.subheading),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -26,11 +53,11 @@ class ProductDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🖼️ صورة مع Hero للحركة
+            // --- واجهة عرض المنتج ---
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Hero(
-                tag: 'product_${product.id}',
+                tag: 'det_product_${product.id}',
                 child: AspectRatio(
                   aspectRatio: 16 / 9,
                   child: Image.network(
@@ -45,8 +72,6 @@ class ProductDetailsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            // الاسم + السعر
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -71,8 +96,6 @@ class ProductDetailsPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            // شِبّات معلومات بسيطة (تفاعل بصري)
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -90,14 +113,12 @@ class ProductDetailsPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-
-            // الوصف
             Text('الوصف', style: AppTextStyles.subheading),
             const SizedBox(height: 8),
             Text(descText, style: AppTextStyles.body),
             const SizedBox(height: 24),
 
-            // كمية + زر إضافة للسلة (واجهة فقط)
+            // --- واجهة التحكم بالسلة (ديناميكية) ---
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -113,7 +134,6 @@ class ProductDetailsPage extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // Stepper كميّة تفاعلي بسيط
                   Obx(() => Row(
                     children: [
                       IconButton(
@@ -130,25 +150,37 @@ class ProductDetailsPage extends StatelessWidget {
                     ],
                   )),
                   const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      // واجهة فقط: عرض SnackBar لطيف
-                      Get.snackbar(
-                        'تمت الإضافة',
-                        'أُضيف ${product.name} (${qty.value}x) إلى السلة',
-                        snackPosition: SnackPosition.BOTTOM,
-                        duration: const Duration(seconds: 2),
-                      );
-                    },
-                    icon: const Icon(Icons.shopping_cart_outlined),
-                    label: const Text('أضِف إلى السلة'),
-                  ),
+                  if (isFromCart)
+                  // زر حفظ التعديلات
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        cartController.updateQuantity(product.id, qty.value);
+                        Get.back();
+                        Get.snackbar('تم الحفظ', 'تم تحديث الكمية بنجاح');
+                      },
+                      icon: const Icon(Icons.save_as_outlined),
+                      label: const Text('حفظ'),
+                    )
+                  else
+                  // زر الإضافة للسلة
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        cartController.addToCart(product, quantity: qty.value);
+                        Get.snackbar(
+                          'تمت الإضافة',
+                          'أُضيف ${product.name} (${qty.value}x) إلى السلة',
+                          snackPosition: SnackPosition.BOTTOM,
+                        );
+                      },
+                      icon: const Icon(Icons.add_shopping_cart),
+                      label: const Text('أضِف إلى السلة'),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
 
-            // مشاركة (واجهة فقط)
+            // --- زر المشاركة ---
             OutlinedButton.icon(
               onPressed: () {
                 Get.snackbar('مشاركة', 'تم نسخ رابط المنتج (عرض تجريبي)',
@@ -157,6 +189,9 @@ class ProductDetailsPage extends StatelessWidget {
               },
               icon: const Icon(Icons.share_outlined),
               label: const Text('مشاركة المنتج'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 40),
+              ),
             ),
           ],
         ),

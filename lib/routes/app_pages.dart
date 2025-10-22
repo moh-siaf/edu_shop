@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import '../features/cart/cart_controller/cart_controller.dart';
+import '../features/cart/view/cart_page.dart';
+import '../features/categories/view/pages/category_products_page.dart';
 import '../features/products/binding/product_binding.dart';
 import '../features/products/view/pages/add_product_page.dart';
 import '../features/products/view/pages/home_page.dart';
@@ -20,18 +23,31 @@ class AppPages {
     GetPage(
       name: Routes.productList,
       page: () => const ProductListPage(),
-  binding: ProductBinding(),
+
     ),
     GetPage(
       name: Routes.addProduct,
       page: () => const AddProductPage(),
-      binding: ProductBinding(),
+
 
     ),
     GetPage(
       name: Routes.productDetails,
       page: () => const ProductDetailsPage(),
-     binding: ProductBinding(),
+
+
+    ),
+// في AppPages.dart أو routes file
+    GetPage(
+      name: Routes.cart,
+      page: () => const CartPage(),
+
+    ),
+
+    GetPage(
+      name: Routes.CATEGORY_PRODUCTS,
+      page: () => const CategoryProductsPage(),
+
 
     ),
 

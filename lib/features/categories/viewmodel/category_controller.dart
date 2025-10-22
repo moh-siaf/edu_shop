@@ -3,64 +3,78 @@ import 'package:get/get.dart';
 import '../../../data/repositories/BaseCategoryRepository.dart';
 import '../../../data/repositories/category_repository.dart';
 import '../../../model/category_model.dart';
-import '../../../model/product_model.dart';
 
-/// 🎮 هذا الكنترولر لا يعرف Firebase إطلاقًا.
-/// يتعامل فقط مع BaseCategoryRepository.
 class CategoryController extends GetxController {
-  final BaseCategoryRepository _repo = CategoryRepository();
+  // 1. حقن الـ Repository (نستخدم Base لضمان العزل)
+  final BaseCategoryRepository _repository = CategoryRepository();
+
+  // 2. متغيرات الحالة التي ستراقبها الواجهة
   final categories = <CategoryModel>[].obs;
-  final bestSellers = <ProductModel>[].obs;
-  final recommended = <ProductModel>[].obs;
   final isLoading = false.obs;
 
-
-
-  /// 🔹 تحميل كل الفئات من المستودع
+  // 3. دالة لجلب كل الأقسام
   Future<void> fetchCategories() async {
     try {
       isLoading.value = true;
-      final data = await _repo.getAllCategories();
+      final data = await _repository.getAllCategories();
       categories.assignAll(data);
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// 🔹 إضافة فئة جديدة
+  // 4. دالة لإضافة قسم جديد
   Future<void> addCategory(CategoryModel category) async {
     try {
-      await _repo.addCategory(category);
-      await fetchCategories(); // تحديث القائمة
-      Get.snackbar('تمت الإضافة', 'تمت إضافة الفئة بنجاح');
-    } catch (e) {
-      Get.snackbar('خطأ', 'تعذر إضافة الفئة: $e');
+      isLoading.value = true;
+      await _repository.addCategory(category);
+      fetchCategories(); // إعادة تحميل القائمة بعد الإضافة
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  /// 🔹 تعديل فئة موجودة
+  // 5. دالة لتحديث قسم موجود
   Future<void> updateCategory(CategoryModel category) async {
     try {
-      await _repo.updateCategory(category);
-      await fetchCategories();
-      Get.snackbar('تم التحديث', 'تم تعديل الفئة بنجاح');
-    } catch (e) {
-      Get.snackbar('خطأ', 'تعذر تعديل الفئة: $e');
+      isLoading.value = true;
+      await _repository.updateCategory(category);
+      // تحديث العنصر في القائمة المحلية لتجنب إعادة تحميل الكل
+      final index = categories.indexWhere((c) => c.id == category.id);
+      if (index != -1) {
+        categories[index] = category;
+        categories.refresh();
+      }
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  /// 🔹 حذف فئة
-  Future<void> deleteCategory(String id) async {
+  // 6. دالة لحذف قسم
+  Future<void> deleteCategory(String categoryId) async {
     try {
-      await _repo.deleteCategory(id);
-      categories.removeWhere((c) => c.id == id);
-      Get.snackbar('تم الحذف', 'تم حذف الفئة بنجاح');
-    } catch (e) {
-      Get.snackbar('خطأ', 'تعذر حذف الفئة: $e');
+      isLoading.value = true;
+      await _repository.deleteCategory(categoryId);
+      // حذف العنصر من القائمة المحلية
+      categories.removeWhere((c) => c.id == categoryId);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  // في ملف category_controller.dart
+
+  CategoryModel? getById(String id) {
+    try {
+      // ابحث في قائمة الأقسام عن القسم الذي يطابق الـ ID
+      return categories.firstWhere((cat) => cat.id == id);
+    } catch (_) {
+      // إذا لم يتم العثور عليه، أرجع null بأمان
+      return null;
     }
   }
 
-  /// 🔹 تحميل الفئات عند بدء التشغيل
+
+  // 7. جلب الأقسام تلقائيًا عند بدء تشغيل الكنترولر
   @override
   void onInit() {
     super.onInit();

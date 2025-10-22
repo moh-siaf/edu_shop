@@ -1,298 +1,186 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-
 import '../../../../routes/app_routes.dart';
+import '../../../categories/viewmodel/category_controller.dart';
 import '../../viewmodel/products_controller.dart';
-
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ProductController());
+    final CategoryController categoryCtrl = Get.find<CategoryController>();
+
+
     final RxInt bannerIndex = 0.obs;
     final List<String> banners = [
-      'https://i.ibb.co/g4ykLwS/banner1.jpg',
-      'https://i.ibb.co/VJ3jV2s/banner2.jpg',
-      'https://i.ibb.co/syC7M6b/banner3.jpg',
+      'https://via.placeholder.com/600x250.png?text=Offer+1',
+      'https://via.placeholder.com/600x250.png?text=New+Arrivals',
+      'https://via.placeholder.com/600x250.png?text=Sale+50%25',
     ];
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // الانتقال إلى صفحة إضافة المنتج
+          Get.toNamed(Routes.addProduct);
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      // 💡 الإصلاح: إضافة لون خلفية للصفحة لتجنب السواد الكامل عند حدوث خطأ
       backgroundColor: AppColors.background,
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final products = controller.products;
-        if (products.isEmpty) {
-          return const Center(child: Text('لا توجد منتجات حالياً'));
-        }
-
-        return CustomScrollView(
-          slivers: [
-            // 🔹 الشريط العلوي
-            SliverAppBar(
-              pinned: true,
-              floating: true,
-              backgroundColor: AppColors.primary,
-              title: const Text('المتجر الفاخر', style: AppTextStyles.subheading),
-              centerTitle: true,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.search, color: Colors.white),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-
-            // 🔸 السلايدر (بدون مكتبة خارجية)
-            SliverToBoxAdapter(
+      body: CustomScrollView(
+        slivers: [
+          // 1. الشريط العلوي (لا تغيير هنا )
+          SliverAppBar(
+            floating: true,
+            pinned: true,
+            backgroundColor: AppColors.primary,
+            title: const Text('متجرنا الفاخر', style: AppTextStyles.subheading),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                onPressed: () => Get.toNamed(Routes.cart),
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60.0),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: SizedBox(
-                  height: 160,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      PageView.builder(
-                        itemCount: banners.length,
-                        onPageChanged: (i) => bannerIndex.value = i,
-                        controller: PageController(viewportFraction: 0.9),
-                        itemBuilder: (context, i) {
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.network(
-                                banners[i],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: Icon(Icons.image_not_supported, size: 50),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'ابحث عن منتج...',
+                    prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // 2. السلايدر (لا تغيير هنا، كان صحيحًا)
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 180,
+              child: PageView.builder(
+                itemCount: banners.length,
+                onPageChanged: (i) => bannerIndex.value = i,
+                controller: PageController(viewportFraction: 0.9),
+                itemBuilder: (context, i) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      image: DecorationImage(
+                        image: NetworkImage(banners[i]),
+                        fit: BoxFit.cover,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // 3. عنوان "الأقسام" (لا تغيير هنا)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text('الأقسام', style: AppTextStyles.subheading),
+            ),
+          ),
+
+          // 4. قائمة الأقسام - 💡 الإصلاح الرئيسي هنا
+          // يجب أن يكون Obx يلف الويدجت الذي يعتمد على البيانات مباشرة
+          Obx(() {
+            if (categoryCtrl.isLoading.isTrue && categoryCtrl.categories.isEmpty) {
+              // اعرض التحميل فقط إذا كانت القائمة فارغة
+              return const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (categoryCtrl.categories.isEmpty) {
+              // اعرض رسالة إذا كانت القائمة فارغة بعد انتهاء التحميل
+              return const SliverFillRemaining(
+                  child: Center(child: Text('لا توجد أقسام متاحة حاليًا'))
+              );
+            }
+
+            // إذا كانت هناك بيانات، قم ببناء الشبكة
+            return SliverPadding(
+              padding: const EdgeInsets.all(12),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.1,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                    final category = categoryCtrl.categories[index];
+                    return InkWell(
+                      onTap: () {
+                        Get.toNamed(Routes.productList, arguments: category);
+                      },
+
+                      child: Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        clipBehavior: Clip.antiAlias,
+                        child: Hero(
+                          tag: 'category_${category.id}',
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(category.imageUrl, fit: BoxFit.cover),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.center,
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      // 🔸 المؤشرات (النقاط)
-                      Positioned(
-                        bottom: 8,
-                        child: Obx(() {
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(banners.length, (i) {
-                              final isActive = i == bannerIndex.value;
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                width: isActive ? 18 : 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: isActive ? Colors.white : Colors.white60,
-                                  borderRadius: BorderRadius.circular(8),
+                              Positioned(
+                                bottom: 10,
+                                right: 10,
+                                child: Text(
+                                  category.name,
+                                  style: AppTextStyles.subheading.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
-                              );
-                            }),
-                          );
-                        }),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // 🔹 قسم حصرياً لك
-            SliverToBoxAdapter(
-              child: _buildSectionTitle('حصرياً لك'),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 230,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  itemCount: products.length.clamp(0, 6),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return _ExclusiveCard(product: product);
+                    );
                   },
+                  childCount: categoryCtrl.categories.length,
                 ),
               ),
-            ),
-
-            // 🔹 قسم الأكثر مبيعاً
-            SliverToBoxAdapter(
-              child: _buildSectionTitle('الأكثر مبيعاً'),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.all(10),
-              sliver: SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                    final product = products[index];
-                    return _ProductCard(product: product);
-                  },
-                  childCount: products.length,
-                ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.72,
-                ),
-              ),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: AppTextStyles.subheading.copyWith(color: AppColors.primary)),
-          Text('عرض الكل', style: AppTextStyles.body.copyWith(color: AppColors.accent)),
+            );
+          }),
         ],
-      ),
-    );
-  }
-}
-
-// 🧱 كرت قسم "حصرياً لك"
-class _ExclusiveCard extends StatelessWidget {
-  final dynamic product;
-  const _ExclusiveCard({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Get.toNamed(Routes.productDetails, arguments: product),
-      child: Container(
-        width: 150,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Hero(
-              tag: 'product_${product.id}',
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.network(
-                  product.imageUrl,
-                  height: 120,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 120,
-                    color: Colors.grey[200],
-                    child: const Icon(Icons.image_not_supported),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(product.name, style: AppTextStyles.body),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${product.price.toStringAsFixed(2)} ر.س',
-                    style: AppTextStyles.subheading.copyWith(color: AppColors.primary),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 🧱 كرت المنتج في الشبكة
-class _ProductCard extends StatelessWidget {
-  final dynamic product;
-  const _ProductCard({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Get.toNamed(Routes.productDetails, arguments: product),
-      child: Hero(
-        tag: 'product_${product.id}',
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 2,
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Image.network(
-                  product.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(product.name, style: AppTextStyles.subheading),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${product.price} ر.س',
-                      style: AppTextStyles.body.copyWith(color: AppColors.success),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
