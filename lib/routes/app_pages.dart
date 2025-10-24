@@ -1,6 +1,10 @@
 import 'package:get/get.dart';
+import '../features/auth/view/pages/login_page.dart';
+import '../features/auth/view/pages/register_page.dart';
+import '../features/auth/view/pages/splash_page.dart';
 import '../features/cart/cart_controller/cart_controller.dart';
 import '../features/cart/view/cart_page.dart';
+import '../features/categories/view/pages/add_category_page.dart';
 import '../features/categories/view/pages/category_products_page.dart';
 import '../features/products/binding/product_binding.dart';
 import '../features/products/view/pages/add_product_page.dart';
@@ -47,9 +51,15 @@ class AppPages {
     GetPage(
       name: Routes.CATEGORY_PRODUCTS,
       page: () => const CategoryProductsPage(),
-
-
     ),
 
+  GetPage(
+  name: Routes.ADD_CATEGORY,
+  page: () => AddCategoryPage(),
+  ),
+
+    GetPage(name: Routes.splash, page: () => const SplashPage()),
+    GetPage(name: Routes.login, page: () => const LoginPage()),
+    GetPage(name: Routes.register, page: () => const RegisterPage()),
   ];
 }

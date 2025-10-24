@@ -1,3 +1,5 @@
+// --- في ملف: lib/features/products/viewmodel/products_controller.dart ---
+
 import 'package:get/get.dart';
 import 'dart:io';
 
@@ -6,6 +8,7 @@ import '../../../data/repositories/product_repository.dart';
 import '../../../data/repositories/storage_repository.dart';
 import '../../../model/product_model.dart';
 
+
 class ProductController extends GetxController {
   final BaseProductRepository _repo = ProductRepository();
   final BaseStorageRepository _storageRepo = StorageRepository();
@@ -13,28 +16,19 @@ class ProductController extends GetxController {
   final products = <ProductModel>[].obs;
   final isLoading = false.obs;
 
-  /// 🔹 تحميل كل المنتجات من المستودع
+  @override
+  void onInit() {
+    super.onInit();
+    fetchProducts();
+  }
+
   Future<void> fetchProducts() async {
     try {
       isLoading.value = true;
-
-      // 1. جلب البيانات من المستودع
       final data = await _repo.getAllProducts();
-
-      // --- 💡 الكود التشخيصي المضاف ---
-
-
-
-
-
-      // --- نهاية التشخيص ---
-
-      // 2. تحديث قائمة المنتجات
       products.assignAll(data);
-
     } catch (e) {
-      // طباعة أي خطأ يحدث أثناء جلب البيانات
-
+      print("Product fetch error: $e");
     } finally {
       isLoading.value = false;
     }
@@ -62,9 +56,9 @@ class ProductController extends GetxController {
     try {
       await _repo.deleteProduct(id);
       products.removeWhere((p) => p.id == id);
-      Get.snackbar('تم الحذف', 'تم حذف المنتج بنجاح');
+      Get.snackbar('Success', 'Product deleted successfully');
     } catch (e) {
-      Get.snackbar('خطأ', 'تعذر حذف المنتج');
+      Get.snackbar('Error', 'Failed to delete product');
     }
   }
 
@@ -76,15 +70,9 @@ class ProductController extends GetxController {
         products[index] = product;
         products.refresh();
       }
-      Get.snackbar('تم التعديل', 'تم تحديث المنتج بنجاح');
+      Get.snackbar('Success', 'Product updated successfully');
     } catch (e) {
-      Get.snackbar('خطأ', 'تعذر تعديل المنتج');
+      Get.snackbar('Error', 'Failed to update product');
     }
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchProducts();
   }
 }

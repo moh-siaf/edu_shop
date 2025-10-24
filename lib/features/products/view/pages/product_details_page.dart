@@ -1,24 +1,25 @@
+// --- في ملف: lib/features/products/view/pages/product_details_page.dart ---
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../model/product_model.dart';
 import '../../../../routes/app_routes.dart';
 import '../../../cart/cart_controller/cart_controller.dart';
-import '../../viewmodel/products_controller.dart';
 
 class ProductDetailsPage extends StatelessWidget {
   const ProductDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // --- ✅ جلب الثيم الحالي ---
+    final theme = Theme.of(context);
+
     // 1. استقبال البيانات وتحديد السياق
     final arguments = Get.arguments;
     final ProductModel product;
     bool isFromCart = false;
     int initialQuantity = 1;
-
-
 
     if (arguments is Map && arguments['source'] == 'cart') {
       product = arguments['product'];
@@ -26,26 +27,27 @@ class ProductDetailsPage extends StatelessWidget {
       isFromCart = true;
     } else {
       product = arguments;
-      isFromCart = false;
     }
 
     // 2. تهيئة الكنترولرات والكمية
     final CartController cartController = Get.find<CartController>();
-    final ProductController productController = Get.find<ProductController>();
     final RxInt qty = initialQuantity.obs;
 
     final hasDesc = !(product.description?.trim().isEmpty ?? true);
     final descText = hasDesc ? product.description!.trim() : 'لا يوجد وصف متاح لهذا المنتج.';
 
     return Scaffold(
+      // --- ✅ استخدام لون الخلفية من الثيم ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        // AppBar سيأخذ لونه من الثيم تلقائيًا
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () => Get.toNamed(Routes.cart),
           ),
         ],
-        title: Text(isFromCart ? 'تعديل الكمية' : product.name, style: AppTextStyles.subheading),
+        title: Text(isFromCart ? 'تعديل الكمية' : product.name),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -76,21 +78,23 @@ class ProductDetailsPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
+                  // ✅ استخدام ستايل ولون النص من الثيم
                   child: Text(
                     product.name,
-                    style: AppTextStyles.heading.copyWith(color: AppColors.primary),
+                    style: theme.textTheme.displaySmall?.copyWith(color: theme.colorScheme.primary),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    // ✅ استخدام لون الحالة من الثيم
+                    color: theme.colorScheme.secondary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${product.price.toStringAsFixed(2)} ر.س',
-                    style: AppTextStyles.subheading.copyWith(color: AppColors.success),
+                    style: AppTextStyles.subheading.copyWith(color: theme.colorScheme.secondary),
                   ),
                 ),
               ],
@@ -102,27 +106,32 @@ class ProductDetailsPage extends StatelessWidget {
               children: [
                 Chip(
                   label: const Text('متوفر'),
-                  backgroundColor: AppColors.primary.withOpacity(0.08),
-                  labelStyle: AppTextStyles.body.copyWith(color: AppColors.primary),
+                  // ✅ استخدام لون الحالة من الثيم
+                  backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+                  labelStyle: AppTextStyles.body.copyWith(color: theme.colorScheme.primary),
                 ),
                 Chip(
                   label: const Text('شحن سريع'),
-                  backgroundColor: AppColors.accent.withOpacity(0.08),
-                  labelStyle: AppTextStyles.body.copyWith(color: AppColors.accent),
+                  // ✅ استخدام لون الحالة من الثيم
+                  backgroundColor: theme.colorScheme.secondary.withOpacity(0.08),
+                  labelStyle: AppTextStyles.body.copyWith(color: theme.colorScheme.secondary),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Text('الوصف', style: AppTextStyles.subheading),
+            // ✅ استخدام ستايل ولون النص من الثيم
+            Text('الوصف', style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text(descText, style: AppTextStyles.body),
+            // ✅ استخدام ستايل ولون النص من الثيم
+            Text(descText, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 24),
 
             // --- واجهة التحكم بالسلة (ديناميكية) ---
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                // ✅ استخدام لون البطاقة من الثيم
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -142,7 +151,8 @@ class ProductDetailsPage extends StatelessWidget {
                         },
                         icon: const Icon(Icons.remove_circle_outline),
                       ),
-                      Text('${qty.value}', style: AppTextStyles.subheading),
+                      // ✅ استخدام ستايل ولون النص من الثيم
+                      Text('${qty.value}', style: theme.textTheme.titleMedium),
                       IconButton(
                         onPressed: () => qty.value++,
                         icon: const Icon(Icons.add_circle_outline),
@@ -150,8 +160,8 @@ class ProductDetailsPage extends StatelessWidget {
                     ],
                   )),
                   const Spacer(),
+                  // ElevatedButton سيأخذ ستايله من الثيم تلقائيًا
                   if (isFromCart)
-                  // زر حفظ التعديلات
                     ElevatedButton.icon(
                       onPressed: () {
                         cartController.updateQuantity(product.id, qty.value);
@@ -162,7 +172,6 @@ class ProductDetailsPage extends StatelessWidget {
                       label: const Text('حفظ'),
                     )
                   else
-                  // زر الإضافة للسلة
                     ElevatedButton.icon(
                       onPressed: () {
                         cartController.addToCart(product, quantity: qty.value);
@@ -191,6 +200,10 @@ class ProductDetailsPage extends StatelessWidget {
               label: const Text('مشاركة المنتج'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 40),
+                // ✅ استخدام لون النص الأساسي من الثيم
+                foregroundColor: theme.colorScheme.primary,
+                // ✅ استخدام لون حدود من الثيم
+                side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.5)),
               ),
             ),
           ],

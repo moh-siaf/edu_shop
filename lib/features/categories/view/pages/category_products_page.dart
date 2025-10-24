@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../model/category_model.dart';
 import '../../../products/viewmodel/products_controller.dart';
 
@@ -11,77 +8,153 @@ class CategoryProductsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. استقبل القسم الذي تم الضغط عليه من HomePage
     final CategoryModel category = Get.arguments;
-
-    // 2. اعثر على كنترولر المنتجات
     final ProductController productCtrl = Get.find<ProductController>();
+    final filteredProducts = productCtrl.products.where((p) => p.categoryId == category.id).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        // 3. اجعل عنوان الصفحة هو اسم القسم
-        title: Text(category.name, style: AppTextStyles.subheading),
-        backgroundColor: AppColors.primary,
-        centerTitle: true,
-      ),
-      body: Obx(() {
-        // 4. قم بتصفية قائمة المنتجات الكاملة
-        final filteredProducts = productCtrl.products
-            .where((product) => product.categoryId == category.id)
-            .toList();
-
-        if (productCtrl.isLoading.isTrue) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (filteredProducts.isEmpty) {
-          return Center(
-            child: Text(
-              'لا توجد منتجات في قسم "${category.name}" حاليًا',
-              style: AppTextStyles.body,
-            ),
-          );
-        }
-
-        // 5. اعرض المنتجات المصفاة في GridView
-        return GridView.builder(
-          padding: const EdgeInsets.all(12),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.8, // نسبة العرض إلى الارتفاع لكل بطاقة
-          ),
-          itemCount: filteredProducts.length,
-          itemBuilder: (context, index) {
-            final product = filteredProducts[index];
-            // هنا تضع تصميم بطاقة المنتج (Product Card) الذي تستخدمه عادةً
-            return Card(
-              elevation: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Hero(
-                      // استخدم tag فريد لمنتجات هذه الصفحة
-                      tag: 'prod_cat_${product.id}',
-                      child: Image.network(product.imageUrl, fit: BoxFit.cover),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(product.name, style: AppTextStyles.body, maxLines: 1),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text('${product.price} ر.س', style: AppTextStyles.subheading.copyWith(color: AppColors.primary)),
-                  ),
-                ],
+      body: CustomScrollView(
+        slivers: [
+          // --- 1. الهيدر المتفاعل (SliverAppBar) ---
+          SliverAppBar(
+            expandedHeight: 200.0, // ارتفاع الهيدر عند التوسيع
+            floating: true, // يظهر بمجرد السحب للأسفل
+            pinned: true, // يبقى شريط العنوان الصغير ظاهرًا دائمًا
+            snap: true, // يكمل الظهور أو الاختفاء تلقائيًا
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(category.name, style: const TextStyle(shadows: [Shadow(blurRadius: 8)])),
+              background: Image.network(
+                category.imageUrl, // صورة القسم كخلفية للهيدر
+                fit: BoxFit.cover,
+                color: Colors.black.withOpacity(0.4), // لتغميق الخلفية وإبراز النص
+                colorBlendMode: BlendMode.darken,
               ),
-            );
-          },
-        );
-      }),
+              centerTitle: true,
+            ),
+          ),
+
+          // --- 2. بانر الإعلانات (سيتم برمجته لاحقًا) ---
+          SliverToBoxAdapter(
+            child: Container(
+              height: 120,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(16),
+                image: const DecorationImage(
+                  image: NetworkImage('https://via.placeholder.com/600x200/B2EBF2/000000?Text=Special+Offer' ), // صورة إعلان مؤقتة
+                  fit: BoxFit.cover,
+                ),
+              ),
+              // TODO: برمجة نظام الإعلانات هنا لاحقًا
+            ),
+          ),
+
+          // --- 3. قسم "الأكثر مبيعًا" (قائمة أفقية) ---
+          _buildHorizontalSection(
+            title: 'الأكثر مبيعًا 🔥',
+            products: filteredProducts, // TODO: يجب جلب المنتجات الأكثر مبيعًا فعليًا
+          ),
+
+          // --- 4. قسم "الأعلى تقييمًا" (قائمة أفقية) ---
+          _buildHorizontalSection(
+            title: 'الأعلى تقييمًا ⭐',
+            products: filteredProducts.reversed.toList(), // TODO: يجب جلب الأعلى تقييمًا فعليًا
+          ),
+
+          // --- 5. عنوان لشبكة المنتجات الرئيسية ---
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text('كل المنتجات', style: Theme.of(context).textTheme.titleLarge),
+            ),
+          ),
+
+          // --- 6. شبكة المنتجات الرئيسية ---
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                  final product = filteredProducts[index];
+                  // استخدام بطاقة المنتج مع تأثير اللمس
+                  return _buildProductCard(product);
+                },
+                childCount: filteredProducts.length,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- ويدجت منفصل لبطاقة المنتج مع تأثير اللمس ---
+  Widget _buildProductCard(product) {
+    return Card(
+      clipBehavior: Clip.antiAlias, // لضمان تطبيق انحناء الحواف على الصورة
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          // TODO: الانتقال لصفحة تفاصيل المنتج
+          print('Pressed on ${product.name}');
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Image.network(product.imageUrl, fit: BoxFit.cover),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8).copyWith(bottom: 8),
+              child: Text('${product.price} ر.س', style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- ويدجت منفصل للأقسام الأفقية ---
+  SliverToBoxAdapter _buildHorizontalSection({required String title, required List products}) {
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(title, style: Get.theme.textTheme.titleLarge),
+          ),
+          SizedBox(
+            height: 220, // ارتفاع القائمة الأفقية
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                return SizedBox(
+                  width: 150, // عرض كل عنصر في القائمة الأفقية
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _buildProductCard(products[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

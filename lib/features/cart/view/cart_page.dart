@@ -1,43 +1,46 @@
+// --- في ملف: lib/features/cart/view/pages/cart_page.dart ---
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_text_styles.dart';
-import '../../../routes/app_routes.dart';
-import '../../products/viewmodel/products_controller.dart';
+import '../../../../core/constants/app_text_styles.dart';
+import '../../../../model/product_model.dart';
+import '../../../../routes/app_routes.dart';
 import '../cart_controller/cart_controller.dart';
-
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final ProductController controller = Get.find<ProductController>();
+    // --- ✅ جلب الثيم الحالي ---
+    final theme = Theme.of(context);
     final CartController cartController = Get.find<CartController>();
 
     return Scaffold(
+      // --- ✅ استخدام لون الخلفية من الثيم ---
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('سلة التسوق', style: AppTextStyles.subheading),
+        // AppBar سيأخذ لونه من الثيم تلقائيًا
+        title: const Text('سلة التسوق'),
         centerTitle: true,
       ),
-      // استخدام Obx لمراقبة التغييرات في السلة
       body: Obx(() {
-        // في حالة كانت السلة فارغة، اعرض رسالة لطيفة
         if (cartController.cartItems.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.textSecondary),
-                SizedBox(height: 16),
-                Text('سلتك فارغة بعد!', style: AppTextStyles.subheading),
-                Text('أضف بعض المنتجات الرائعة', style: AppTextStyles.body),
+                // ✅ استخدام لون النص الثانوي من الثيم
+                Icon(Icons.shopping_cart_outlined, size: 80, color: theme.textTheme.bodySmall?.color),
+                const SizedBox(height: 16),
+                // ✅ استخدام ستايلات النصوص من الثيم
+                Text('سلتك فارغة بعد!', style: theme.textTheme.titleLarge),
+                Text('أضف بعض المنتجات الرائعة', style: theme.textTheme.bodyMedium),
               ],
             ),
           );
         }
 
-        // إذا كانت هناك منتجات، اعرضها في قائمة
         return ListView.builder(
           padding: const EdgeInsets.all(8),
           itemCount: cartController.cartItems.length,
@@ -45,9 +48,8 @@ class CartPage extends StatelessWidget {
             final cartItem = cartController.cartItems[index];
             final product = cartItem.product;
 
-            // استخدام Dismissible للحذف عند السحب
             return Dismissible(
-              key: Key(product.id), // مفتاح فريد لكل عنصر
+              key: Key(product.id),
               direction: DismissDirection.startToEnd,
               onDismissed: (direction) {
                 cartController.removeFromCart(product.id);
@@ -59,7 +61,8 @@ class CartPage extends StatelessWidget {
               },
               background: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.8),
+                  // ✅ استخدام لون الخطأ من الثيم
+                  color: theme.colorScheme.error.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 margin: const EdgeInsets.symmetric(vertical: 8),
@@ -68,12 +71,10 @@ class CartPage extends StatelessWidget {
                 child: const Icon(Icons.delete_sweep_outlined, color: Colors.white, size: 30),
               ),
               child: Card(
-                elevation: 2,
+                // Card سيأخذ ستايله من الثيم تلقائيًا
                 margin: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-
                   onTap: () {
                     Get.toNamed(
                       Routes.productDetails,
@@ -88,7 +89,6 @@ class CartPage extends StatelessWidget {
                     padding: const EdgeInsets.all(12.0),
                     child: Row(
                       children: [
-                        // صورة المنتج
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
@@ -99,38 +99,37 @@ class CartPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-
-                        // التفاصيل (الاسم والسعر)
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // ✅ استخدام ستايل ولون النص من الثيم
                               Text(
                                 product.name,
-                                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
+                              // ✅ استخدام لون النص الأساسي من الثيم
                               Text(
                                 '${product.price.toStringAsFixed(2)} ر.س',
-                                style: AppTextStyles.body.copyWith(color: AppColors.primary),
+                                style: AppTextStyles.body.copyWith(color: theme.colorScheme.primary),
                               ),
                             ],
                           ),
                         ),
-
-                        // *** التعديل الرئيسي هنا ***
-                        // عرض الكمية فقط، بدون أزرار
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: AppColors.background,
+                            // ✅ استخدام لون الخلفية من الثيم
+                            color: theme.scaffoldBackgroundColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'x ${cartItem.quantity}', // عرض الكمية بشكل أنيق
-                            style: AppTextStyles.subheading.copyWith(color: AppColors.textPrimary),
+                            'x ${cartItem.quantity}',
+                            // ✅ استخدام ستايل ولون النص من الثيم
+                            style: theme.textTheme.titleMedium,
                           ),
                         ),
                       ],
@@ -142,7 +141,6 @@ class CartPage extends StatelessWidget {
           },
         );
       }),
-      // الشريط السفلي لعرض الإجمالي (يبقى كما هو)
       bottomNavigationBar: Obx(() {
         if (cartController.cartItems.isEmpty) {
           return const SizedBox.shrink();
@@ -150,7 +148,7 @@ class CartPage extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: theme.scaffoldBackgroundColor,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -166,19 +164,18 @@ class CartPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('الإجمالي:', style: AppTextStyles.body),
+                  // ✅ استخدام ستايل ولون النص من الثيم
+                  Text('الإجمالي:', style: theme.textTheme.bodyMedium),
+                  // ✅ استخدام لون النص الأساسي من الثيم
                   Text(
                     '${cartController.totalPrice.toStringAsFixed(2)} ر.س',
-                    style: AppTextStyles.heading.copyWith(color: AppColors.primary),
+                    style: theme.textTheme.displaySmall?.copyWith(color: theme.colorScheme.primary),
                   ),
                 ],
               ),
+              // ElevatedButton سيأخذ ستايله من الثيم تلقائيًا
               ElevatedButton(
                 onPressed: () { /* لاحقًا لصفحة الدفع */ },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  textStyle: AppTextStyles.button,
-                ),
                 child: const Text('إتمام الشراء'),
               ),
             ],
