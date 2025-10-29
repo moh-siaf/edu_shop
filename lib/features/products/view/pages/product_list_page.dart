@@ -7,7 +7,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 // --- Imports ---
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/app_sizes.dart';
- // ✅ استيراد الكنترولر الجديد
 import '../../../../core/widgets/gradient_app_bar.dart';
 
 import '../../../../model/category_model.dart';
@@ -16,7 +15,6 @@ import '../../../../routes/app_routes.dart';
 import '../../viewmodel/banner_controller.dart';
 import '../../viewmodel/products_controller.dart';
 
-// ✅ الصفحة تبقى StatelessWidget
 class ProductListPage extends StatelessWidget {
   const ProductListPage({super.key});
 
@@ -24,40 +22,33 @@ class ProductListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ProductController productCtrl = Get.find<ProductController>();
-    // ✅ إنشاء نسخة من كنترولر البانر
-    final BannerController bannerCtrl = Get.put(BannerController());
+    final BannerController bannerCtrl = Get.find<BannerController>();
     final CategoryModel? category = Get.arguments as CategoryModel?;
     final bool isFiltered = category != null;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Obx(() {
-        // فلترة المنتجات أولاً وقبل كل شيء
         final List<ProductModel> displayProducts = isFiltered
             ? productCtrl.products.where((p) => p.categoryId == category!.id).toList()
             : productCtrl.products;
 
         return CustomScrollView(
           slivers: [
-            // --- 1. الشريط العلوي المرن ---
             buildFlexibleAppBar(
               context: context,
               title: isFiltered ? category!.name : 'قائمة المنتجات',
               actions: [
-
                 IconButton(
                   icon: const Icon(AppIcons.cart),
                   onPressed: () => Get.toNamed(Routes.cart),
                 ),
               ],
             ),
-
-            // --- 2. المحتوى العلوي (بانر، قوائم أفقية) ---
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- البانر المحدث الذي يستخدم BannerController ---
                   Container(
                     height: AppSizes.bannerHeight,
                     margin: const EdgeInsets.all(AppSizes.pagePadding),
@@ -78,7 +69,6 @@ class ProductListPage extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   if (displayProducts.isNotEmpty) ...[
                     _buildHorizontalSection(
                       context: context,
@@ -93,13 +83,10 @@ class ProductListPage extends StatelessWidget {
                       products: displayProducts.skip(5).take(5).toList(),
                     ),
                   ],
-
                   _buildSectionTitle(context, 'كل المنتجات', AppIcons.allProducts),
                 ],
               ),
             ),
-
-            // --- 3. قائمة المنتجات الرئيسية (الرأسية) ---
             if (productCtrl.isLoading.value && displayProducts.isEmpty)
               const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
             else if (displayProducts.isEmpty)
@@ -130,19 +117,39 @@ class ProductListPage extends StatelessWidget {
                             ),
                             child: Row(
                               children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(AppSizes.borderRadiusMedium),
-                                    bottomRight: Radius.circular(AppSizes.borderRadiusMedium),
-                                  ),
-                                  child: CachedNetworkImage(
-                                    imageUrl: product.imageUrl,
-                                    height: 110,
-                                    width: 110,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Container(color: theme.scaffoldBackgroundColor.withOpacity(0.5)),
-                                    errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 40),
-                                  ),
+                                Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        topRight: Radius.circular(AppSizes.borderRadiusMedium),
+                                        bottomRight: Radius.circular(AppSizes.borderRadiusMedium),
+                                      ),
+                                      child: CachedNetworkImage(
+                                        imageUrl: product.imageUrl,
+                                        height: 110,
+                                        width: 110,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(color: theme.scaffoldBackgroundColor.withOpacity(0.5)),
+                                        errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 40),
+                                      ),
+                                    ),
+                                    if (product.discountPercentage > 0)
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.error,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '${product.discountPercentage}%',
+                                            style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 const SizedBox(width: AppSizes.itemSpacing - 4),
                                 Expanded(
@@ -153,21 +160,36 @@ class ProductListPage extends StatelessWidget {
                                       children: [
                                         Text(product.name, style: theme.textTheme.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
                                         const SizedBox(height: 4),
-                                        Text('${product.price.toStringAsFixed(2)} ر.س', style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                                        if (product.discountPercentage <= 0)
+                                          Text(
+                                            '${product.price.toStringAsFixed(2)} ر.س',
+                                            style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                                          )
+                                        else
+                                        // --- ✅ [مُعدل]: استخدام FittedBox لحل الـ Overflow ---
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                Text(
+                                                  '${product.discountPrice?.toStringAsFixed(2)} ر.س',
+                                                  style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  '${product.price.toStringAsFixed(2)} ر.س',
+                                                  style: theme.textTheme.bodySmall?.copyWith(
+                                                    color: Colors.grey,
+                                                    decoration: TextDecoration.lineThrough,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                       ],
                                     ),
                                   ),
-                                ),
-                                PopupMenuButton<String>(
-                                  icon: Icon(AppIcons.more, color: theme.textTheme.bodySmall?.color),
-                                  onSelected: (value) {
-                                    if (value == 'edit') Get.toNamed(Routes.addProduct, arguments: product);
-                                    else if (value == 'delete') productCtrl.deleteProduct(product.id);
-                                  },
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(value: 'edit', child: Row(children: [Icon(AppIcons.edit, color: theme.colorScheme.primary), const SizedBox(width: 8), const Text('تعديل')])),
-                                    PopupMenuItem(value: 'delete', child: Row(children: [Icon(AppIcons.delete, color: theme.colorScheme.error), const SizedBox(width: 8), const Text('حذف')])),
-                                  ],
                                 ),
                               ],
                             ),
@@ -179,7 +201,6 @@ class ProductListPage extends StatelessWidget {
                   childCount: displayProducts.length,
                 ),
               ),
-
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         );
@@ -260,6 +281,22 @@ Widget _buildHorizontalProductCard(BuildContext context, ProductModel product) {
                 errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
             ),
+            if (product.discountPercentage > 0)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.error,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${product.discountPercentage}%',
+                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
+                  ),
+                ),
+              ),
             Positioned(
               bottom: 0, left: 0, right: 0,
               child: Container(
@@ -287,10 +324,33 @@ Widget _buildHorizontalProductCard(BuildContext context, ProductModel product) {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${product.price.toStringAsFixed(2)} ر.س',
-                    style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
-                  ),
+                  if (product.discountPercentage <= 0)
+                    Text(
+                      '${product.price.toStringAsFixed(2)} ر.س',
+                      style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                    )
+                  else
+                  // --- ✅ [مُعدل]: استخدام FittedBox هنا أيضًا ---
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${product.discountPrice?.toStringAsFixed(2)} ر.س',
+                            style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${product.price.toStringAsFixed(2)} ر.س',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: Colors.white70,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),

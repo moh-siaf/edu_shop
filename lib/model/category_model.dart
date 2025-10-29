@@ -1,3 +1,5 @@
+// --- في ملف: lib/model/category_model.dart ---
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CategoryModel {
@@ -27,6 +29,19 @@ class CategoryModel {
       id: snap.id, // نأخذ الـ ID من المستند نفسه
       name: data['name'] ?? '',
       imageUrl: data['imageUrl'] ?? '',
+    );
+  }
+
+  // ✅✅✅ الدالة الجديدة التي أضفناها ✅✅✅
+  CategoryModel copyWith({
+    String? id,
+    String? name,
+    String? imageUrl,
+  }) {
+    return CategoryModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }

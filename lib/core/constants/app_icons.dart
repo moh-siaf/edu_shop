@@ -24,4 +24,6 @@ class AppIcons {
 
   // --- ✅ أيقونات الشريط العلوي الجديدة ---
   static const IconData notifications = Icons.notifications_none_rounded;
+
+  static const IconData offers = Icons.local_offer;
 }

@@ -11,6 +11,19 @@ abstract class BaseProductRepository {
   // ✳️ نضيف دالة تعديل المنتج
   Future<void> updateProduct(ProductModel product);
 
+  // --- في ملف: lib/data/repositories/base_product_repository.dart ---
+
+  Future<void> updateProductDiscount({
+    required String productId,
+    required int discountPercentage,
+    required double newPrice,
+  });
+
+  Future<void> removeProductDiscount(String productId);
+  Future<List<ProductModel>> getProductsByCategoryId(String categoryId);
+
+
+
 }
 
 /// 🧱 واجهة عامة للتعامل مع رفع الصور (Storage)

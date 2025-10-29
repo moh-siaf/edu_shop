@@ -8,6 +8,8 @@ class ProductModel {
   final String? description;
   final DateTime? createdAt;
   final String categoryId;
+  final double? discountPrice;
+  final String? offerId;
 
   const ProductModel({
     required this.id,
@@ -17,26 +19,36 @@ class ProductModel {
     this.description,
     this.createdAt,
     required this.categoryId,
+    this.discountPrice,
+    this.offerId,
   });
 
-  // --- دالة القراءة من Firestore (تبقى كما هي) ---
+
   factory ProductModel.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? const <String, dynamic>{};
+    final data = doc.data() ?? {};
+
     final rawPrice = data['price'];
     final doublePrice = rawPrice is int ? rawPrice.toDouble() : (rawPrice as double? ?? 0.0);
+
+    final rawDiscountPrice = data['discountPrice'];
+    final doubleDiscountPrice = rawDiscountPrice is int ? rawDiscountPrice.toDouble() : (rawDiscountPrice as double?);
+
     final ts = data['createdAt'];
     final created = ts is Timestamp ? ts.toDate() : (ts is DateTime ? ts : null);
 
     return ProductModel(
       id: doc.id,
-      name: (data['name'] as String? ?? '').trim(),
+      name: data['name'] as String? ?? '',
       price: doublePrice,
-      imageUrl: (data['imageUrl'] as String? ?? '').trim(),
-      description: (data['description'] as String?)?.trim(),
+      imageUrl: data['imageUrl'] as String? ?? '',
+      categoryId: data['categoryId'] as String? ?? '',
+      description: data['description'] as String?,
       createdAt: created,
-      categoryId: (data['categoryId'] as String? ?? '').trim(),
+      discountPrice: doubleDiscountPrice,
+      offerId: data['offerId'] as String?,
     );
   }
+
 
   // --- 1. تعديل toMap لتكون متوافقة مع الحفظ المحلي ---
   Map<String, dynamic> toMap() {
@@ -73,9 +85,10 @@ class ProductModel {
       'price': price,
       'imageUrl': imageUrl,
       'categoryId': categoryId,
-      if (description != null && description!.isNotEmpty) 'description': description,
-      // استخدام Timestamp عند الكتابة في Firestore
+      if (description != null) 'description': description,
       if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
+      if (discountPrice != null) 'discountPrice': discountPrice,
+      if (offerId != null) 'offerId': offerId,
     };
   }
 
@@ -85,18 +98,29 @@ class ProductModel {
     String? name,
     double? price,
     String? imageUrl,
+    String? categoryId,
     String? description,
     DateTime? createdAt,
-    String? categoryId,
+    double? discountPrice,
+    String? offerId,
   }) {
     return ProductModel(
       id: id ?? this.id,
       name: name ?? this.name,
       price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
+      categoryId: categoryId ?? this.categoryId,
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
-      categoryId: categoryId ?? this.categoryId,
+      discountPrice: discountPrice ?? this.discountPrice,
+      offerId: offerId ?? this.offerId,
     );
+  }
+
+  bool get hasDiscount => discountPrice != null && discountPrice! > 0;
+
+  int get discountPercentage {
+    if (!hasDiscount) return 0;
+    return (((price - discountPrice!) / price) * 100).round();
   }
 }

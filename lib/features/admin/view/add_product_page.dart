@@ -4,10 +4,10 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 
-import '../../../../model/category_model.dart';
-import '../../../../model/product_model.dart';
-import '../../../categories/viewmodel/category_controller.dart';
-import '../../viewmodel/products_controller.dart';
+import '../../../model/category_model.dart';
+import '../../../model/product_model.dart';
+import '../../categories/viewmodel/category_controller.dart';
+import '../../products/viewmodel/products_controller.dart';
 
 class AddProductPage extends StatelessWidget {
   // 1. لا نمرر المنتج عبر الكونستركتر بعد الآن
@@ -130,14 +130,23 @@ class AddProductPage extends StatelessWidget {
                         categoryId: selectedCategory.value!.id,
                       );
 
-                      if (isEdit) {
-                        await controller.updateProduct(product);
-                      } else {
-                        await controller.addProduct(product);
+                      // --- ✅ الكود الجديد والمُحسن ✅ ---
+
+                      try {
+                        if (isEdit) {
+                          await controller.updateProduct(product);
+                          Get.back(); // العودة بعد النجاح
+                          Get.snackbar('Success', 'Product updated successfully');
+                        } else {
+                          await controller.addProduct(product);
+                          Get.back(); // العودة بعد النجاح
+                          Get.snackbar('Success', 'Product added successfully');
+                        }
+                      } catch (e) {
+                        // في حالة حدوث أي خطأ أثناء العملية
+                        Get.snackbar('Error', 'An error occurred: ${e.toString()}');
                       }
-                      Get.back();
-                    } catch (e) {
-                      Get.snackbar('خطأ', 'حدث خطأ أثناء العملية: $e');
+
                     } finally {
                       controller.isLoading.value = false;
                     }

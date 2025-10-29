@@ -1,4 +1,6 @@
-import 'dart:io';
+
+
+/*import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -70,7 +72,7 @@ class AddCategoryPage extends StatelessWidget {
                       return;
                     }
                     // --- استدعاء واحد فقط ---
-                    _controller.createCategory(
+                   _controller.createCategory(
                       name: _nameController.text.trim(),
                       imageFile: _selectedImage.value!,
                     );
@@ -84,4 +86,4 @@ class AddCategoryPage extends StatelessWidget {
       ),
     );
   }
-}
+}*/

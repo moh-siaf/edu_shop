@@ -13,6 +13,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   carousel_slider:
   cached_network_image: ^3.3.1 # ✅ أضف هذه الحزمة
+  smooth_page_indicator: ^1.1.0 # أو أي إصدار أحدث
+
 
   # State & Local DB
   get: ^4.6.6

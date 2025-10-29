@@ -20,4 +20,21 @@ class AppSizes {
   // --- أنصاف الأقطار للـ BorderRadius ---
   static const double borderRadiusMedium = 16.0;
   static const double borderRadiusSmall = 8.0;
+  static const double appBarExpandedHeight = 150.0;
+
+
+
+  //صفحة الاداره
+// Paddings
+
+  static const double cardPadding = 12.0;
+
+  // Spacing
+  static const double spaceSmall = 4.0;
+  static const double spaceMedium = 8.0;
+  static const double spaceLarge = 16.0;
+
+  // Border Radius
+
+  static const double borderRadiusLarge = 12.0;
 }

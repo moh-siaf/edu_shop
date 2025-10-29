@@ -6,7 +6,7 @@ class ProductRepository implements BaseProductRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final _productsRef = FirebaseFirestore.instance.collection('products');
 
-  /// 🔹 تنفيذ جلب كل المنتجات من Firestore (لا تغيير هنا)
+
   @override
   Future<List<ProductModel>> getAllProducts() async {
     // هذا الكود سليم ويستخدم fromDoc بشكل صحيح
@@ -55,5 +55,53 @@ class ProductRepository implements BaseProductRepository {
       // --- السطر الوحيد الذي أضفناه ---
       'categoryId': product.categoryId,
     });
+  }
+  // --- في ملف: lib/data/repositories/product_repository.dart ---
+
+  @override
+  Future<void> updateProductDiscount({
+    required String productId,
+    required int discountPercentage,
+    required double newPrice,
+  }) async {
+    try {
+      await _firestore.collection('products').doc(productId).update({
+        'discountPercentage': discountPercentage,
+        'discountPrice': newPrice,
+      });
+    } catch (e) {
+      // يمكنك التعامل مع الخطأ هنا أو تركه للكنترولر
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> removeProductDiscount(String productId) async {
+    try {
+      await _firestore.collection('products').doc(productId).update({
+        'discountPercentage': 0,
+        'discountPrice': null, // أو 0 حسب تصميم قاعدة البيانات
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+  @override
+  Future<List<ProductModel>> getProductsByCategoryId(String categoryId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('products')
+          .where('categoryId', isEqualTo: categoryId) // الشرط الأساسي للفلترة
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => ProductModel.fromDoc(doc))
+          .toList();
+
+    } catch (e) {
+      // يمكنك التعامل مع الخطأ هنا أو تركه للكنترولر
+      print('Error fetching products by category: $e');
+      rethrow;
+    }
   }
 }

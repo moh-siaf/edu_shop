@@ -9,11 +9,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/constants/app_sizes.dart';
 
+import '../../../../core/widgets/banner_widget.dart'; // ✅ استيراد البانر الجديد
 import '../../../../core/widgets/gradient_app_bar.dart';
 import '../../../../routes/app_routes.dart';
 import '../../../categories/viewmodel/category_controller.dart';
-import '../../../products/viewmodel/products_controller.dart';
-import '../../viewmodel/banner_controller.dart';
 
 // الصفحة تبقى StatelessWidget
 class HomePage extends StatelessWidget {
@@ -23,8 +22,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final CategoryController categoryCtrl = Get.find<CategoryController>();
-    // إنشاء نسخة من كنترولر البانر مع tag فريد
-    final BannerController bannerCtrl = Get.put(BannerController(), tag: 'home_banner');
+    // ❌ تم حذف Get.put(BannerController) من هنا
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -33,13 +31,7 @@ class HomePage extends StatelessWidget {
           buildFlexibleAppBar(
             context: context,
             title: 'Edu Shop',
-
             actions: [
-              IconButton(
-                icon: const Icon(Icons.inventory),
-                tooltip: 'إضافة 100 منتج (للاختبار)',
-                onPressed: () => Get.find<ProductController>().seedNewProducts(),
-              ),
               IconButton(
                 icon: const Icon(AppIcons.notifications),
                 onPressed: () {},
@@ -57,26 +49,13 @@ class HomePage extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: AppSizes.smallSpacing),
-                  // --- البانر المحدث الذي يستخدم BannerController ---
-                  SizedBox(
-                    height: AppSizes.bannerHeight - 40,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
-                      child: PageView.builder(
-                        controller: bannerCtrl.pageController,
-                        itemCount: bannerCtrl.banners.length,
-                        onPageChanged: bannerCtrl.onPageChanged,
-                        itemBuilder: (context, i) {
-                          return CachedNetworkImage(
-                            imageUrl: bannerCtrl.banners[i],
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(color: theme.cardColor),
-                            errorWidget: (context, url, error) => const Icon(Icons.error),
-                          );
-                        },
-                      ),
-                    ),
+
+                  // --- ✅✅✅ استخدام BannerWidget الجديد ✅✅✅ ---
+                  const BannerWidget(
+                    showIndicator: false, // لا نعرض النقاط هنا
+                    height: AppSizes.bannerHeight - 40, // نفس الارتفاع القديم
                   ),
+
                   const SizedBox(height: AppSizes.itemSpacing),
                   TextField(
                     decoration: InputDecoration(
@@ -107,7 +86,6 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.pagePadding),
             sliver: Obx(() {
               if (categoryCtrl.isLoading.isTrue && categoryCtrl.categories.isEmpty) {
-                // استخدام Shimmer داخل SliverGrid
                 return SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
@@ -181,19 +159,51 @@ class HomePage extends StatelessWidget {
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
       ),
+      // --- ✅✅✅ تحديث الزر العائم والقائمة المنبثقة ✅✅✅ ---
       floatingActionButton: PopupMenuButton<String>(
-        offset: const Offset(0, -120),
-        itemBuilder: (context) => [
-          PopupMenuItem(value: 'add_category', child: Row(children: [Icon(Icons.category_outlined, color: theme.colorScheme.primary), const SizedBox(width: 8), const Text('إضافة قسم')])),
-          PopupMenuItem(value: 'add_product', child: Row(children: [Icon(Icons.add_shopping_cart_outlined, color: theme.colorScheme.primary), const SizedBox(width: 8), const Text('إضافة منتج')])),
-        ],
+        offset: const Offset(0, -180), // تعديل المسافة
+        color: theme.cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium)),
         onSelected: (value) {
-          if (value == 'add_category') Get.toNamed(Routes.addProduct);
-          if (value == 'add_product') Get.toNamed(Routes.addProduct);
+          if (value == 'admin_dashboard') {
+            Get.toNamed(Routes.adminDashboard);
+          } else if (value == 'add_category') {
+            Get.toNamed(Routes.addProduct); // تصحيح المسار
+          } else if (value == 'add_product') {
+            Get.toNamed(Routes.addProduct);
+          }
         },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: 'admin_dashboard',
+            child: Row(children: const [
+              Icon(Icons.admin_panel_settings_outlined),
+              SizedBox(width: AppSizes.itemSpacing),
+              Text('لوحة التحكم'),
+            ]),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'add_category',
+            child: Row(children: const [
+              Icon(Icons.category_outlined),
+              SizedBox(width: AppSizes.itemSpacing),
+              Text('إضافة قسم'),
+            ]),
+          ),
+          PopupMenuItem(
+            value: 'add_product',
+            child: Row(children: const [
+              Icon(Icons.add_shopping_cart_outlined),
+              SizedBox(width: AppSizes.itemSpacing),
+              Text('إضافة منتج'),
+            ]),
+          ),
+        ],
         child: FloatingActionButton(
-          onPressed: null,
+          onPressed: null, // يجب أن يكون null ليعمل PopupMenuButton
           backgroundColor: theme.colorScheme.error,
+          elevation: 4,
           child: const Icon(Icons.add, color: Colors.white, size: 30),
         ),
       ),
@@ -213,8 +223,8 @@ class HomePage extends StatelessWidget {
                 _buildNavItem(context, icon: AppIcons.home, label: 'الرئيسية', isActive: true),
                 _buildNavItem(context, icon: AppIcons.myAds, label: 'إعلاناتي'),
                 const SizedBox(width: 40),
-                _buildNavItem(context, icon: AppIcons.auctions, label: 'مزايدة'),
-                _buildNavItem(context, icon: AppIcons.more, label: 'المزيد'),
+                _buildNavItem(context, icon: AppIcons.auctions, label: 'مزايدة'), // ✅ تم إصلاح التكرار
+                _buildNavItem(context, icon: AppIcons.more, label: 'المزيد', onTap: () => Get.toNamed(Routes.offers)),
               ],
             ),
           ],
@@ -223,10 +233,17 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(BuildContext context, {required IconData icon, required String label, bool isActive = false}) {
+// ... (بقية الدوال المساعدة تبقى كما هي)
+}
+
+// ... (ودجتات الشيمر تبقى كما هي)
+
+
+Widget _buildNavItem(BuildContext context, {required IconData icon, required String label, bool isActive = false, VoidCallback? onTap}) {
     final color = isActive ? Theme.of(context).colorScheme.error : Theme.of(context).textTheme.bodySmall?.color;
     return InkWell(
-      onTap: () {},
+      onTap: onTap, // ✅ هنا يتم استخدام onTap
+
       borderRadius: BorderRadius.circular(30),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -241,8 +258,6 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-}
-
 // ودجت الشيمر لبطاقة القسم
 class ShimmerCategoryCard extends StatelessWidget {
   const ShimmerCategoryCard({super.key});

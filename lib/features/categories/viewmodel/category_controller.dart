@@ -107,7 +107,7 @@ class CategoryController extends GetxController {
       // 2. تجهيز المودل
       final newCategory = CategoryModel(id: '', name: name, imageUrl: imageUrl);
 
-      // 3. الحفظ في قاعدة البيانات
+
       await addCategory(newCategory);
 
       Get.back(); // العودة بعد النجاح

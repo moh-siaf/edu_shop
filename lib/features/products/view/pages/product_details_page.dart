@@ -56,23 +56,50 @@ class ProductDetailsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- واجهة عرض المنتج ---
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Hero(
-                tag: 'det_product_${product.id}',
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[200],
-                      child: const Center(child: Icon(Icons.broken_image, size: 64)),
+            // --- ✅ [مُعدل]: استخدام Stack لإضافة شارة الخصم ---
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Hero(
+                    tag: 'det_product_${product.id}',
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: Colors.grey[200],
+                          child: const Center(child: Icon(Icons.broken_image, size: 64)),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+
+                // --- شارة الخصم (تظهر فقط في حالة وجود خصم) ---
+                if (product.discountPercentage > 0)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${product.discountPercentage}%',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
+
             const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,19 +111,49 @@ class ProductDetailsPage extends StatelessWidget {
                     style: theme.textTheme.displaySmall?.copyWith(color: theme.colorScheme.primary),
                   ),
                 ),
+                // --- ✅ استبدل الجزء السابق بهذا الكود ---
+
                 const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    // ✅ استخدام لون الحالة من الثيم
-                    color: theme.colorScheme.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+
+// م
+                if (product.discountPercentage <= 0)
+                // اعرض السعر الأصلي فقط
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${product.price.toStringAsFixed(2)} ر.س',
+                      style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.secondary),
+                    ),
+                  )
+// إذا كان المنتج يحتوي على خصم
+                else
+                // اعرض السعرين (القديم والجديد)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // 1. السعر القديم (مع خط في المنتصف)
+                      Text(
+                        '${product.price.toStringAsFixed(2)} ر.س',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.grey,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                      // 2. السعر الجديد (بعد الخصم)
+                      Text(
+                        '${product.discountPrice?.toStringAsFixed(2)} ر.س',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    '${product.price.toStringAsFixed(2)} ر.س',
-                    style: AppTextStyles.subheading.copyWith(color: theme.colorScheme.secondary),
-                  ),
-                ),
+
               ],
             ),
             const SizedBox(height: 12),
